@@ -5,4 +5,18 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="RepositoryAnalyticsApi.ServiceModel">
+      <HintPath>lib\RepositoryAnalyticsApi.ServiceModel.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
