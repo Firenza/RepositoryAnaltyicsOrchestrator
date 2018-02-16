@@ -2,6 +2,8 @@
 using Newtonsoft.Json;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -60,8 +62,6 @@ namespace RepositoryAnaltyicsDataRefresher
             });
 
             commandLineApplication.Execute(args);
-
-            Console.ReadKey();
         }
 
         public static async Task ExecuteProgram(string repositoryAnalyticsApiUrl, string userName, string organizationName, bool refreshAllInformation)
@@ -81,14 +81,18 @@ namespace RepositoryAnaltyicsDataRefresher
 
             var httpClient = new HttpClient();
 
-            httpClient.Timeout = new TimeSpan(0, 0, 0, 5);
-
             string endCursor = null;
             bool moreRepostoriesToRead = false;
+            var sourceRepositoriesRead = 0;
+            var sourceRepositoriesAnalyzed = 0;
+
+            var stopWatch = Stopwatch.StartNew();
 
             do
             {
                 HttpResponseMessage getSourceReposResponse = null;
+
+                Console.WriteLine($"Reading next batch of {batchSize} repositories for login {userName ?? organizationName}");
 
                 if (endCursor != null)
                 {
@@ -102,16 +106,29 @@ namespace RepositoryAnaltyicsDataRefresher
                 var responseBodyString = await getSourceReposResponse.Content.ReadAsStringAsync();
                 var results = JsonConvert.DeserializeObject<CursorPagedResults<RepositorySourceRepository>>(responseBodyString);
 
+                sourceRepositoriesRead += results.Results.Count();
+
                 endCursor = results.EndCursor;
                 moreRepostoriesToRead = results.MoreToRead;
 
                 foreach (var result in results.Results)
                 {
+                    Console.WriteLine($"Starting analysis of {result.Url}");
+
                     var requestContent = new StringContent($"{{\"repositoryUrl\": \"{result.Url}\"}}", Encoding.UTF8, "application/json");
                     await httpClient.PostAsync($"{repositoryAnalyticsApiUrl}/api/repositoryanalysis/", requestContent);
+
+                    sourceRepositoriesAnalyzed += 1;
                 }
 
             } while (moreRepostoriesToRead);
+
+            stopWatch.Stop();
+
+            Console.WriteLine($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.Minutes} minutes and {stopWatch.Elapsed.Seconds} seconds");
+
+            Console.WriteLine("\nExecution complete ... press any key to exit");
+            Console.ReadKey();
         }
     }
 }
