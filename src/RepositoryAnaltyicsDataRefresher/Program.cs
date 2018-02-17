@@ -115,7 +115,16 @@ namespace RepositoryAnaltyicsDataRefresher
                 {
                     Console.WriteLine($"Starting analysis of {result.Url}");
 
-                    var requestContent = new StringContent($"{{\"repositoryUrl\": \"{result.Url}\"}}", Encoding.UTF8, "application/json");
+                    var repositoryAnalysis = new RepositoryAnalysis
+                    {
+                        ForceCompleteRefresh = refreshAllInformation,
+                        LastUpdatedOn = result.UpdatedAt,
+                        RepositoryUrl = result.Url
+                    };
+
+                    var jsonBody = JsonConvert.SerializeObject(repositoryAnalysis);
+
+                    var requestContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
                     await httpClient.PostAsync($"{repositoryAnalyticsApiUrl}/api/repositoryanalysis/", requestContent);
 
                     sourceRepositoriesAnalyzed += 1;
