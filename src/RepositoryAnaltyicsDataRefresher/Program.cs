@@ -16,47 +16,70 @@ namespace RepositoryAnaltyicsDataRefresher
         {
             CommandLineApplication commandLineApplication = new CommandLineApplication(throwOnUnexpectedArg: false);
 
-            CommandOption repositoryAnaltycisApiUrl = commandLineApplication.Option(
+            CommandOption repositoryAnaltycisApiUrlOption = commandLineApplication.Option(
                "-url | <url>",
                "The url of the Repository Analytics API",
                CommandOptionType.SingleValue);
 
-            CommandOption userName = commandLineApplication.Option(
+            CommandOption userNameOption = commandLineApplication.Option(
               "-u | --user <user>",
               "The user under which to pull repository information from",
               CommandOptionType.SingleValue);
 
-            CommandOption organizationName = commandLineApplication.Option(
+            CommandOption organizationNameOption = commandLineApplication.Option(
                "-o | --organization <organization>",
                "The organization under which to pull repository information from",
                CommandOptionType.SingleValue);
 
-            CommandOption refreshAll = commandLineApplication.Option(
+            CommandOption refreshAllOption = commandLineApplication.Option(
               "-ra | --refreshall",
               "Refresh all repository information even if that have been no changes since last update",
               CommandOptionType.NoValue);
 
+            CommandOption sourceReadBatchSizeOption = commandLineApplication.Option(
+                "-b | --sourcereadbatchsize",
+                "Refresh all repository information even if that have been no changes since last update. Defaults to 10",
+                CommandOptionType.SingleValue);
+
             commandLineApplication.OnExecute(async () =>
             {
-                if (!repositoryAnaltycisApiUrl.HasValue())
+                if (!repositoryAnaltycisApiUrlOption.HasValue())
                 {
                     Console.WriteLine("You must specify a url for the Repository Analytics API");
                     return 1;
                 }
-                
-                if (!userName.HasValue() && !organizationName.HasValue())
+
+                if (!userNameOption.HasValue() && !organizationNameOption.HasValue())
                 {
                     Console.WriteLine("You must specify a user or an origanization");
                     return 1;
                 }
-                else if (userName.HasValue() && organizationName.HasValue())
+                else if (userNameOption.HasValue() && organizationNameOption.HasValue())
                 {
                     Console.WriteLine("You can not specify both a user and an origanization");
                     return 1;
                 }
                 else
                 {
-                    await ExecuteProgram(repositoryAnaltycisApiUrl.Value(), userName?.Value(), organizationName?.Value(), refreshAll.HasValue());
+                    int? sourceReadBatchSize = null;
+
+                    if (sourceReadBatchSizeOption.HasValue())
+                    {
+                       
+                        var batchSizeIsInteger = Int32.TryParse(sourceReadBatchSizeOption.Value(), out int batchSize);
+
+                        if (batchSizeIsInteger)
+                        {
+                            sourceReadBatchSize = batchSize;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Soruce Read Batch Size must be an integer");
+                            return 1;
+                        }
+                    }
+
+                    await ExecuteProgram(repositoryAnaltycisApiUrlOption.Value(), userNameOption?.Value(), organizationNameOption?.Value(), sourceReadBatchSize ,refreshAllOption.HasValue());
                     return 0;
                 }
             });
@@ -64,7 +87,7 @@ namespace RepositoryAnaltyicsDataRefresher
             commandLineApplication.Execute(args);
         }
 
-        public static async Task ExecuteProgram(string repositoryAnalyticsApiUrl, string userName, string organizationName, bool refreshAllInformation)
+        public static async Task ExecuteProgram(string repositoryAnalyticsApiUrl, string userName, string organizationName, int? sourceReadBatchSize, bool refreshAllInformation)
         {
             var userOrOganziationNameQueryString = string.Empty;
 
@@ -77,7 +100,16 @@ namespace RepositoryAnaltyicsDataRefresher
                 userOrOganziationNameQueryString = $"organization={organizationName}";
             }
 
-            var batchSize = 10;
+            int batchSize;
+
+            if (sourceReadBatchSize.HasValue)
+            {
+                batchSize = sourceReadBatchSize.Value;
+            }
+            else
+            {
+                batchSize = 10;
+            }
 
             var httpClient = new HttpClient();
 
