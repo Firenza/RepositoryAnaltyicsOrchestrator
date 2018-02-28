@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using RepositoryAnalyticsApi.ServiceModel;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -117,6 +118,7 @@ namespace RepositoryAnaltyicsDataRefresher
             bool moreRepostoriesToRead = false;
             var sourceRepositoriesRead = 0;
             var sourceRepositoriesAnalyzed = 0;
+            var repositoryAnalysisErrors = new List<(string repoName, string errorMessage, string errorStackTrace)>();
 
             var stopWatch = Stopwatch.StartNew();
 
@@ -157,7 +159,15 @@ namespace RepositoryAnaltyicsDataRefresher
                     var jsonBody = JsonConvert.SerializeObject(repositoryAnalysis);
 
                     var requestContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-                    await httpClient.PostAsync($"{repositoryAnalyticsApiUrl}/api/repositoryanalysis/", requestContent);
+
+                    try
+                    {
+                        await httpClient.PostAsync($"{repositoryAnalyticsApiUrl}/api/repositoryanalysis/", requestContent);
+                    }
+                    catch (Exception ex)
+                    {
+                        repositoryAnalysisErrors.Add((result.Url, ex.Message, ex.StackTrace));
+                    }
 
                     sourceRepositoriesAnalyzed += 1;
                 }
@@ -167,6 +177,12 @@ namespace RepositoryAnaltyicsDataRefresher
             stopWatch.Stop();
 
             Console.WriteLine($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.Minutes} minutes and {stopWatch.Elapsed.Seconds} seconds");
+
+            Console.WriteLine($"\nThere were {repositoryAnalysisErrors.Count} analyisis errors");
+            foreach (var repositoryAnalysisError in repositoryAnalysisErrors)
+            {
+                Console.WriteLine($"{repositoryAnalysisError.repoName} - {repositoryAnalysisError.errorMessage}");
+            }
 
             Console.WriteLine("\nExecution complete ... press any key to exit");
             Console.ReadKey();
