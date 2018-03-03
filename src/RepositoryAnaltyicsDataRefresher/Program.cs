@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.CommandLineUtils;
-using Newtonsoft.Json;
 using RepositoryAnalyticsApi.ServiceModel;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsDataRefresher
@@ -66,7 +64,7 @@ namespace RepositoryAnaltyicsDataRefresher
 
                     if (sourceReadBatchSizeOption.HasValue())
                     {
-                       
+
                         var batchSizeIsInteger = Int32.TryParse(sourceReadBatchSizeOption.Value(), out int batchSize);
 
                         if (batchSizeIsInteger)
@@ -80,7 +78,7 @@ namespace RepositoryAnaltyicsDataRefresher
                         }
                     }
 
-                    await ExecuteProgram(repositoryAnaltycisApiUrlOption.Value(), userNameOption?.Value(), organizationNameOption?.Value(), sourceReadBatchSize ,refreshAllOption.HasValue());
+                    await ExecuteProgram(repositoryAnaltycisApiUrlOption.Value(), userNameOption?.Value(), organizationNameOption?.Value(), sourceReadBatchSize, refreshAllOption.HasValue());
                     return 0;
                 }
             });
@@ -90,102 +88,124 @@ namespace RepositoryAnaltyicsDataRefresher
 
         public static async Task ExecuteProgram(string repositoryAnalyticsApiUrl, string userName, string organizationName, int? sourceReadBatchSize, bool refreshAllInformation)
         {
-            var userOrOganziationNameQueryString = string.Empty;
-
-            if (!string.IsNullOrWhiteSpace(userName))
+            try
             {
-                userOrOganziationNameQueryString = $"user={userName}";
-            }
-            else
-            {
-                userOrOganziationNameQueryString = $"organization={organizationName}";
-            }
+                var userOrOranizationNameQueryStringKey = string.Empty;
+                var userOrOganziationNameQueryStringValue = string.Empty;
 
-            int batchSize;
-
-            if (sourceReadBatchSize.HasValue)
-            {
-                batchSize = sourceReadBatchSize.Value;
-            }
-            else
-            {
-                batchSize = 10;
-            }
-
-            var httpClient = new HttpClient();
-
-            string endCursor = null;
-            bool moreRepostoriesToRead = false;
-            var sourceRepositoriesRead = 0;
-            var sourceRepositoriesAnalyzed = 0;
-            var repositoryAnalysisErrors = new List<(string repoName, string errorMessage, string errorStackTrace)>();
-
-            var stopWatch = Stopwatch.StartNew();
-
-            do
-            {
-                HttpResponseMessage getSourceReposResponse = null;
-
-                Console.WriteLine($"Reading next batch of {batchSize} repositories for login {userName ?? organizationName}");
-
-                if (endCursor != null)
+                if (!string.IsNullOrWhiteSpace(userName))
                 {
-                    getSourceReposResponse = await httpClient.GetAsync($"{repositoryAnalyticsApiUrl}/api/repositorysource/repositories?{userOrOganziationNameQueryString}&take={batchSize}&endCursor={endCursor}");
+                    userOrOranizationNameQueryStringKey = "user";
+                    userOrOganziationNameQueryStringValue = userName;
                 }
                 else
                 {
-                    getSourceReposResponse = await httpClient.GetAsync($"{repositoryAnalyticsApiUrl}/api/repositorysource/repositories?{userOrOganziationNameQueryString}&take={batchSize}");
+                    userOrOranizationNameQueryStringKey = "organization";
+                    userOrOganziationNameQueryStringValue = organizationName;
                 }
 
-                var responseBodyString = await getSourceReposResponse.Content.ReadAsStringAsync();
-                var results = JsonConvert.DeserializeObject<CursorPagedResults<RepositorySourceRepository>>(responseBodyString);
+                int batchSize;
 
-                sourceRepositoriesRead += results.Results.Count();
-
-                endCursor = results.EndCursor;
-                moreRepostoriesToRead = results.MoreToRead;
-
-                foreach (var result in results.Results)
+                if (sourceReadBatchSize.HasValue)
                 {
-                    Console.WriteLine($"Starting analysis of {result.Url}");
-
-                    var repositoryAnalysis = new RepositoryAnalysis
-                    {
-                        ForceCompleteRefresh = refreshAllInformation,
-                        LastUpdatedOn = result.UpdatedAt,
-                        RepositoryUrl = result.Url
-                    };
-
-                    var jsonBody = JsonConvert.SerializeObject(repositoryAnalysis);
-
-                    var requestContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-
-                    try
-                    {
-                        await httpClient.PostAsync($"{repositoryAnalyticsApiUrl}/api/repositoryanalysis/", requestContent);
-                    }
-                    catch (Exception ex)
-                    {
-                        repositoryAnalysisErrors.Add((result.Url, ex.Message, ex.StackTrace));
-                    }
-
-                    sourceRepositoriesAnalyzed += 1;
+                    batchSize = sourceReadBatchSize.Value;
+                }
+                else
+                {
+                    batchSize = 10;
                 }
 
-            } while (moreRepostoriesToRead);
+                var repositoryAnaltyicsApiClient = new RestClient(repositoryAnalyticsApiUrl);
 
-            stopWatch.Stop();
+                string endCursor = null;
+                bool moreRepostoriesToRead = false;
+                var sourceRepositoriesRead = 0;
+                var sourceRepositoriesAnalyzed = 0;
+                var repositoryAnalysisErrors = new List<(string repoName, string errorMessage, string errorStackTrace)>();
 
-            Console.WriteLine($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.Minutes} minutes and {stopWatch.Elapsed.Seconds} seconds");
+                var stopWatch = Stopwatch.StartNew();
 
-            Console.WriteLine($"\nThere were {repositoryAnalysisErrors.Count} analyisis errors");
-            foreach (var repositoryAnalysisError in repositoryAnalysisErrors)
+                do
+                {
+                    Console.WriteLine($"Reading next batch of {batchSize} repositories for login {userName ?? organizationName}");
+
+                    CursorPagedResults<RepositorySourceRepository> results = null;
+
+                    if (endCursor != null)
+                    {
+                        var request = new RestRequest("/api/repositorysource/repositories");
+                        request.AddQueryParameter(userOrOranizationNameQueryStringKey, userOrOganziationNameQueryStringValue);
+                        request.AddQueryParameter("take", batchSize.ToString());
+                        request.AddQueryParameter("endCursor", endCursor);
+
+                        var response = await repositoryAnaltyicsApiClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
+
+                        results = response.Data;
+                    }
+                    else
+                    {
+                        var request = new RestRequest("/api/repositorysource/repositories");
+                        request.AddQueryParameter(userOrOranizationNameQueryStringKey, userOrOganziationNameQueryStringValue);
+                        request.AddQueryParameter("take", batchSize.ToString());
+
+                        var response = await repositoryAnaltyicsApiClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
+
+                        results = response.Data;
+                    }
+
+                    sourceRepositoriesRead += results.Results.Count();
+
+                    endCursor = results.EndCursor;
+                    moreRepostoriesToRead = results.MoreToRead;
+
+                    foreach (var result in results.Results)
+                    {
+                        Console.WriteLine($"Starting analysis of {result.Url}");
+
+                        var repositoryAnalysis = new RepositoryAnalysis
+                        {
+                            ForceCompleteRefresh = refreshAllInformation,
+                            LastUpdatedOn = result.UpdatedAt,
+                            RepositoryUrl = result.Url
+                        };
+
+                        try
+                        {
+                            var request = new RestRequest("/api/repositoryanalysis/");
+                            request.AddJsonBody(repositoryAnalysis);
+
+                            await repositoryAnaltyicsApiClient.ExecuteTaskAsync(request);
+                        }
+                        catch (Exception ex)
+                        {
+                            repositoryAnalysisErrors.Add((result.Url, ex.Message, ex.StackTrace));
+                        }
+
+                        sourceRepositoriesAnalyzed += 1;
+                    }
+
+                } while (moreRepostoriesToRead);
+
+                stopWatch.Stop();
+
+                Console.WriteLine($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.Minutes} minutes and {stopWatch.Elapsed.Seconds} seconds");
+
+                Console.WriteLine($"\nThere were {repositoryAnalysisErrors.Count} analyisis errors");
+                foreach (var repositoryAnalysisError in repositoryAnalysisErrors)
+                {
+                    Console.WriteLine($"{repositoryAnalysisError.repoName} - {repositoryAnalysisError.errorMessage}");
+                }
+
+                Console.WriteLine("\nExecution complete ... press any key to exit");
+                Console.ReadKey();
+            }
+            catch (Exception ex)
             {
-                Console.WriteLine($"{repositoryAnalysisError.repoName} - {repositoryAnalysisError.errorMessage}");
+                Console.WriteLine($"FATAL EXCEPTION OCCURRED! {ex.Message}");
+                Console.WriteLine("\nPress any key to exit");
+                Console.ReadKey();
             }
 
-            Console.WriteLine("\nExecution complete ... press any key to exit");
-            Console.ReadKey();
         }
     }
 }
