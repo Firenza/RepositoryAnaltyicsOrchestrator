@@ -184,6 +184,8 @@ namespace RepositoryAnaltyicsDataRefresher
                         sourceRepositoriesAnalyzed += 1;
                     }
 
+                    Console.WriteLine($"Finished analyizing batch of {batchSize} repositories.  {sourceRepositoriesAnalyzed} respositories analyzed thus far");
+
                 } while (moreRepostoriesToRead);
 
                 stopWatch.Stop();
