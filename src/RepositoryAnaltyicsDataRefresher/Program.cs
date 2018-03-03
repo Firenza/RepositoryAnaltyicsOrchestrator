@@ -140,6 +140,11 @@ namespace RepositoryAnaltyicsDataRefresher
 
                         var response = await repositoryAnaltyicsApiClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
 
+                        if (!response.IsSuccessful)
+                        {
+                            throw new ArgumentException($"{response.StatusDescription} - {response.ErrorMessage}");
+                        }
+
                         results = response.Data;
                     }
                     else
@@ -149,6 +154,11 @@ namespace RepositoryAnaltyicsDataRefresher
                         request.AddQueryParameter("take", batchSize.ToString());
 
                         var response = await repositoryAnaltyicsApiClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
+
+                        if (!response.IsSuccessful)
+                        {
+                            throw new ArgumentException($"{response.StatusDescription} - {response.ErrorMessage}");
+                        }
 
                         results = response.Data;
                     }
@@ -171,10 +181,15 @@ namespace RepositoryAnaltyicsDataRefresher
 
                         try
                         {
-                            var request = new RestRequest("/api/repositoryanalysis/");
+                            var request = new RestRequest("/api/repositoryanalysis/", Method.POST);
                             request.AddJsonBody(repositoryAnalysis);
 
-                            await repositoryAnaltyicsApiClient.ExecuteTaskAsync(request);
+                            var response = await repositoryAnaltyicsApiClient.ExecuteTaskAsync(request);
+
+                            if (!response.IsSuccessful)
+                            {
+                                repositoryAnalysisErrors.Add((result.Url, response.StatusDescription, null));
+                            }
                         }
                         catch (Exception ex)
                         {
