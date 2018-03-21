@@ -1,4 +1,4 @@
-# RepositoryAnaltyicsDataRefresher
+# RepositoryAnaltyicsOrchestrator
 
 A .NET Core console application to orchestrate the refreshing of repository analytics information via the [RepositoryAnaltyicsApi](https://github.com/Firenza/RepositoryAnaltyicsApi)
 

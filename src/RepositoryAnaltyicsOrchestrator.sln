@@ -1,9 +1,9 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsDataRefresher", "RepositoryAnaltyicsDataRefresher\RepositoryAnaltyicsDataRefresher.csproj", "{B2EC01B1-312E-4155-B342-0D2DA9125FFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsOrchestrator", "RepositoryAnaltyicsOrchestrator\RepositoryAnaltyicsOrchestrator.csproj", "{B2EC01B1-312E-4155-B342-0D2DA9125FFC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{73D0E0E9-4828-423A-8353-6E6DBFB2CF98}"
 	ProjectSection(SolutionItems) = preProject

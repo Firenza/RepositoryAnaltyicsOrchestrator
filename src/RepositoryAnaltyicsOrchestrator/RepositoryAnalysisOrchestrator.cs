@@ -1,4 +1,4 @@
-﻿using RepositoryAnalyticsApi.ServiceModel;
+using RepositoryAnalyticsApi.ServiceModel;
 using RestSharp;
 using Serilog;
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RepositoryAnaltyicsDataRefresher
+namespace RepositoryAnaltyicsOrchestrator
 {
     public class RepositoryAnalysisOrchestrator
     {

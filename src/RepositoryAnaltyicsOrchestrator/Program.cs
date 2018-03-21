@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+using Microsoft.Extensions.CommandLineUtils;
 using RestSharp;
 using Serilog;
 using Serilog.Events;
 using System;
 
-namespace RepositoryAnaltyicsDataRefresher
+namespace RepositoryAnaltyicsOrchestrator
 {
     public class Program
     {
