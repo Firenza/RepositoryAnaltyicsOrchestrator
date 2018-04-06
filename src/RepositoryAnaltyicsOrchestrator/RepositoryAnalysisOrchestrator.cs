@@ -137,7 +137,8 @@ namespace RepositoryAnaltyicsOrchestrator
 
                 stopWatch.Stop();
 
-                logger.Information($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.Minutes} minutes and {stopWatch.Elapsed.Seconds} seconds");
+
+                logger.Information($"\nAnalyized {sourceRepositoriesAnalyzed} out of {sourceRepositoriesRead} repositories in {stopWatch.Elapsed.TotalMinutes} minutes");
 
                 logger.Information($"\nThere were {repositoryAnalysisErrors.Count} analyisis errors");
                 foreach (var repositoryAnalysisError in repositoryAnalysisErrors)
