@@ -21,7 +21,7 @@ namespace RepositoryAnaltyicsOrchestrator
             this.restClient = restClient;
         }
 
-        public async Task OrchestrateAsync(string repositoryAnalyticsApiUrl, string userName, string organizationName, int? sourceReadBatchSize, bool refreshAllInformation, int? maxConcurrentRequests)
+        public async Task OrchestrateAsync(string repositoryAnalyticsApiUrl, string userName, string organizationName, DateTime? asOf, int? sourceReadBatchSize, bool refreshAllInformation, int? maxConcurrentRequests)
         {
             bool moreRepostoriesToRead = false;
             var sourceRepositoriesRead = 0;
@@ -77,16 +77,16 @@ namespace RepositoryAnaltyicsOrchestrator
                 {
                     logger.Information($"Reading next batch of {batchSize} repositories for login {userName ?? organizationName}");
 
-                    CursorPagedResults<RepositorySourceRepository> results = null;
+                    CursorPagedResults<RepositorySummary> results = null;
 
                     if (endCursor != null)
                     {
                         var request = new RestRequest("/api/repositorysource/repositories");
-                        request.AddQueryParameter(userOrOranizationNameQueryStringKey, userOrOganziationNameQueryStringValue);
+                        request.AddQueryParameter("owner", userOrOganziationNameQueryStringValue);
                         request.AddQueryParameter("take", batchSize.ToString());
                         request.AddQueryParameter("endCursor", endCursor);
 
-                        var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
+                        var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySummary>>(request);
 
                         if (!response.IsSuccessful)
                         {
@@ -98,10 +98,10 @@ namespace RepositoryAnaltyicsOrchestrator
                     else
                     {
                         var request = new RestRequest("/api/repositorysource/repositories");
-                        request.AddQueryParameter(userOrOranizationNameQueryStringKey, userOrOganziationNameQueryStringValue);
+                        request.AddQueryParameter("owner", userOrOganziationNameQueryStringValue);
                         request.AddQueryParameter("take", batchSize.ToString());
 
-                        var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySourceRepository>>(request);
+                        var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySummary>>(request);
 
                         if (!response.IsSuccessful)
                         {
@@ -156,17 +156,25 @@ namespace RepositoryAnaltyicsOrchestrator
                 Console.ReadKey();
             }
 
-            async Task SendAnalysisRequest(SemaphoreSlim semaphore, RepositorySourceRepository sourceRepository)
+            async Task SendAnalysisRequest(SemaphoreSlim semaphore, RepositorySummary repositorySummary)
             {
                 try
                 {
-                    logger.Information($"Starting analysis of {sourceRepository.Url}");
+                    if (asOf.HasValue)
+                    {
+                        logger.Information($"Starting analysis of {repositorySummary.Url} as of {asOf.Value.ToString("F")}");
+                    }
+                    else
+                    {
+                        logger.Information($"Starting analysis of {repositorySummary.Url}");
+                    }
 
                     var repositoryAnalysis = new RepositoryAnalysis
                     {
                         ForceCompleteRefresh = refreshAllInformation,
-                        LastUpdatedOn = sourceRepository.UpdatedAt,
-                        RepositoryUrl = sourceRepository.Url
+                        RepositoryLastUpdatedOn = repositorySummary.UpdatedAt,
+                        RepositoryId = repositorySummary.Url,
+                        AsOf = asOf
                     };
 
                     var request = new RestRequest("/api/repositoryanalysis/", Method.POST);
@@ -176,12 +184,12 @@ namespace RepositoryAnaltyicsOrchestrator
 
                     if (!response.IsSuccessful)
                     {
-                        repositoryAnalysisErrors.Add((sourceRepository.Url, response.StatusDescription, null));
+                        repositoryAnalysisErrors.Add((repositorySummary.Url, response.StatusDescription, null));
                     }
                 }
                 catch (Exception ex)
                 {
-                    repositoryAnalysisErrors.Add((sourceRepository.Url, ex.Message, ex.StackTrace));
+                    repositoryAnalysisErrors.Add((repositorySummary.Url, ex.Message, ex.StackTrace));
                 }
                 finally
                 {

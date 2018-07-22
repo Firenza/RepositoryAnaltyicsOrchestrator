@@ -34,6 +34,11 @@ namespace RepositoryAnaltyicsOrchestrator
                "The organization under which to pull repository information from",
                CommandOptionType.SingleValue);
 
+            CommandOption asOfDateTimeOption = commandLineApplication.Option(
+               "-asof  <asof>",
+               "The point in time at which to do the analysis",
+               CommandOptionType.SingleValue);
+
             CommandOption refreshAllOption = commandLineApplication.Option(
               "-ra | --refreshall",
               "Refresh all repository information even if that have been no changes since last update",
@@ -103,8 +108,19 @@ namespace RepositoryAnaltyicsOrchestrator
                         }
                     }
 
+                    DateTime? asOf = null;
+
+                    if (asOfDateTimeOption.HasValue())
+                    {
+                        DateTime asOfParameterValue;
+
+                        DateTime.TryParse(asOfDateTimeOption.Value(), out asOfParameterValue);
+
+                        asOf = asOfParameterValue;
+                    }
+
                     var repositoryAnalyticsOrchestrator = new RepositoryAnalysisOrchestrator(Log.Logger, new RestClient());
-                    await repositoryAnalyticsOrchestrator.OrchestrateAsync(repositoryAnaltycisApiUrlOption.Value(), userNameOption?.Value(), organizationNameOption?.Value(), sourceReadBatchSize, refreshAllOption.HasValue(), maxConcurrentRequests);
+                    await repositoryAnalyticsOrchestrator.OrchestrateAsync(repositoryAnaltycisApiUrlOption.Value(), userNameOption?.Value(), organizationNameOption?.Value(), asOf, sourceReadBatchSize, refreshAllOption.HasValue(), maxConcurrentRequests);
 
                     return 0;
                 }
