@@ -8,6 +8,10 @@ Serve as an orchestrator for doing bulk operations via calls to the [RepositoryA
 
 * Iterate over all repositories and analyze them via a request to the API. 
 
+#### Tech Used
+
+* .NET Core console application
+
 #### Running locally
 
 The available command line arguments are documented [here](https://github.com/Firenza/RepositoryAnaltyicsDataRefresher/blob/8a2cce7c4da85958e9737dd8752a4e1df00f60b2/src/RepositoryAnaltyicsDataRefresher/Program.cs?#L19-#L42)
