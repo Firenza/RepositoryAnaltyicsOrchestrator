@@ -2,10 +2,15 @@
 
 A .NET Core console application to orchestrate the refreshing of repository analytics information via the [RepositoryAnaltyicsApi](https://github.com/Firenza/RepositoryAnaltyicsApi)
 
+#### Purpose
+
+Serve as an orchestrator for doing bulk operations via calls to the [RepositoryAnaltyicsApi](https://github.com/Firenza/RepositoryAnaltyicsApi). This allows the API to not have to handle bite sized chunks of work and not have to worry about long running tasks. Currently the following workloads are supported.
+
+* Iterate over all repositories and analyze them via a request to the API. 
+
 #### Running locally
 
 The available command line arguments are documented [here](https://github.com/Firenza/RepositoryAnaltyicsDataRefresher/blob/8a2cce7c4da85958e9737dd8752a4e1df00f60b2/src/RepositoryAnaltyicsDataRefresher/Program.cs?#L19-#L42)
-
 
 ###### Using Visual Studio
 
