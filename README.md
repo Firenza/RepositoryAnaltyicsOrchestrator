@@ -11,6 +11,7 @@ Serve as an orchestrator for doing bulk operations via calls to the [RepositoryA
 #### Tech Used
 
 * .NET Core console application
+* Visual Studio
 
 #### Running locally
 
