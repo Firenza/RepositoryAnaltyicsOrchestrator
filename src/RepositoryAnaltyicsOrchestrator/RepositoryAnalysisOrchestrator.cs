@@ -184,7 +184,7 @@ namespace RepositoryAnaltyicsOrchestrator
 
                     if (!response.IsSuccessful)
                     {
-                        if (response.ErrorMessage.StartsWith("No connection could be made because the target machine actively refused it"))
+                        if (response.ErrorMessage != null && response.ErrorMessage.StartsWith("No connection could be made because the target machine actively refused it"))
                         {
                             logger.Error($"UNABLE TO REACH API!!");
                             Console.WriteLine("\nPress any key to exit");
