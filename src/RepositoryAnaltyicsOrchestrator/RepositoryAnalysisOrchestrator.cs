@@ -184,7 +184,17 @@ namespace RepositoryAnaltyicsOrchestrator
 
                     if (!response.IsSuccessful)
                     {
-                        repositoryAnalysisErrors.Add((repositorySummary.Url, response.StatusDescription, null));
+                        if (response.ErrorMessage.StartsWith("No connection could be made because the target machine actively refused it"))
+                        {
+                            logger.Error($"UNABLE TO REACH API!!");
+                            Console.WriteLine("\nPress any key to exit");
+                            Console.ReadKey();
+                            return;
+                        }
+                        else
+                        {
+                            repositoryAnalysisErrors.Add((repositorySummary.Url, response.StatusDescription, null));
+                        }
                     }
                 }
                 catch (Exception ex)
