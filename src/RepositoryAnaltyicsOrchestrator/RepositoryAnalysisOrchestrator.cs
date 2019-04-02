@@ -193,6 +193,7 @@ namespace RepositoryAnaltyicsOrchestrator
                         }
                         else
                         {
+                            logger.Error(response?.ErrorMessage);
                             repositoryAnalysisErrors.Add((repositorySummary.Url, response.StatusDescription, null));
                         }
                     }
