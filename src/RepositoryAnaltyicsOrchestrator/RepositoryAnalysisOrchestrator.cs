@@ -180,6 +180,13 @@ namespace RepositoryAnaltyicsOrchestrator
                     var request = new RestRequest("/api/repositoryanalysis/", Method.POST);
                     request.AddJsonBody(repositoryAnalysis);
 
+                    if (sourceRepositoriesAnalyzed == 0)
+                    {
+                        // If no requests have been completed then set the timeout to be higher as if an organization
+                        // is being targeted then the reading of all the team information can take a few minutes.
+                        request.Timeout = 240000; // 4 Minutes
+                    }
+
                     var response = await restClient.ExecuteTaskAsync(request);
 
                     if (!response.IsSuccessful)
