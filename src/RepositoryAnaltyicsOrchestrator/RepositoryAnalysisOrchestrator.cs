@@ -14,11 +14,13 @@ namespace RepositoryAnaltyicsOrchestrator
     {
         private readonly ILogger logger;
         private readonly IRestClient restClient;
+        private readonly bool runningInContainer;
 
-        public RepositoryAnalysisOrchestrator(ILogger logger, IRestClient restClient)
+        public RepositoryAnalysisOrchestrator(ILogger logger, IRestClient restClient, bool runningInContainer)
         {
             this.logger = logger;
             this.restClient = restClient;
+            this.runningInContainer = runningInContainer;
         }
 
         public async Task OrchestrateAsync(string repositoryAnalyticsApiUrl, string userName, string organizationName, DateTime? asOf, int? sourceReadBatchSize, bool refreshAllInformation, int? maxConcurrentRequests)
@@ -146,14 +148,23 @@ namespace RepositoryAnaltyicsOrchestrator
                     logger.Error($"{repositoryAnalysisError.repoName} - {repositoryAnalysisError.errorMessage}");
                 }
 
-                Console.WriteLine("\nExecution complete ... press any key to exit");
-                Console.ReadKey();
+                Console.WriteLine("\nExecution complete!");
+
+                if (!runningInContainer)
+                {
+                    Console.WriteLine("\nPress any key to exit");
+                    Console.ReadKey();
+                }
             }
             catch (Exception ex)
             {
                 logger.Error($"FATAL EXCEPTION OCCURRED! {ex.Message}");
-                Console.WriteLine("\nPress any key to exit");
-                Console.ReadKey();
+                
+                if (!runningInContainer)
+                {
+                    Console.WriteLine("\nPress any key to exit");
+                    Console.ReadKey();
+                }
             }
 
             async Task SendAnalysisRequest(SemaphoreSlim semaphore, RepositorySummary repositorySummary)
@@ -194,8 +205,13 @@ namespace RepositoryAnaltyicsOrchestrator
                         if (response.ErrorMessage != null && response.ErrorMessage.StartsWith("No connection could be made because the target machine actively refused it"))
                         {
                             logger.Error($"UNABLE TO REACH API!!");
-                            Console.WriteLine("\nPress any key to exit");
-                            Console.ReadKey();
+
+                            if (!runningInContainer)
+                            {
+                                Console.WriteLine("\nPress any key to exit");
+                                Console.ReadKey();
+                            }
+
                             return;
                         }
                         else

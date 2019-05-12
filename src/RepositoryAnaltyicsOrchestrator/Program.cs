@@ -24,8 +24,16 @@ namespace RepositoryAnaltyicsOrchestrator
               .AddEnvironmentVariables()
               .Build();
 
+            // Print out all config data
+            foreach (var child in configuration.GetChildren())
+            {
+                Log.Logger.Information($"{child.Path} ({child.Key}) = {child.Value ?? "(null)"}");
+            }
+
             var config = new RunTimeConfiguration();
             configuration.Bind(config);
+
+            Log.Logger.Information("Config is {@Config}", config);
 
             if (string.IsNullOrWhiteSpace(config.Url))
             {
@@ -44,7 +52,10 @@ namespace RepositoryAnaltyicsOrchestrator
                 return;
             }
 
-            var repositoryAnalyticsOrchestrator = new RepositoryAnalysisOrchestrator(Log.Logger, new RestClient());
+            var inDockerEnvVar = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER");
+            var runningInContainer = inDockerEnvVar == null || inDockerEnvVar == "true";
+
+            var repositoryAnalyticsOrchestrator = new RepositoryAnalysisOrchestrator(Log.Logger, new RestClient(), runningInContainer);
             await repositoryAnalyticsOrchestrator.OrchestrateAsync(config.Url, config.User, config.Organization, config.AsOf, config.BatchSize, config.RefreshAll, config.Concurrency);
 
             return;
