@@ -1,0 +1,4 @@
+{
+  "batchSize": 10,
+  "concurrency": 1
+}

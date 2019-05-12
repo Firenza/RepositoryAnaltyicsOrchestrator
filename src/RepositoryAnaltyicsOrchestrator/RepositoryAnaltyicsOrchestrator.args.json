@@ -4,23 +4,23 @@
   "Items": [
     {
       "Id": "1f6cfa67-3dfe-4ab6-84f2-9040f2fa0a6f",
-      "Command": "-url http://localhost:33283"
+      "Command": "--url http://localhost:33283"
     },
     {
       "Id": "124ab8bc-167b-4fe8-95da-510b2a75afb1",
-      "Command": "-u Firenza"
+      "Command": "--user Firenza"
     },
     {
       "Id": "49840edb-af7d-46a1-af83-8797626de2a3",
-      "Command": "-b 1"
+      "Command": "--batchsize 20"
     },
     {
       "Id": "5fe78bfe-3995-41e4-9614-7f9afc25fd09",
-      "Command": "-c 1"
+      "Command": "--concurrency 1"
     },
     {
       "Id": "c799ea32-1bee-40e5-91c1-9139f6aaebc5",
-      "Command": "-asof 2018-02-22"
+      "Command": "--asof 2018-02-22"
     }
   ]
 }
