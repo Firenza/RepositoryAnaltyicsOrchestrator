@@ -13,5 +13,6 @@ namespace RepositoryAnaltyicsOrchestrator
         public int Concurrency { get; set; }
         public DateTime? AsOf { get; set; }
         public bool RefreshAll { get; set; }
+        public int InitialDelayDuration { get; set; }
     }
 }

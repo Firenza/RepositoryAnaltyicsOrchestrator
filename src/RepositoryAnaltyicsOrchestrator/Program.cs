@@ -35,6 +35,11 @@ namespace RepositoryAnaltyicsOrchestrator
 
             Log.Logger.Information("Config is {@Config}", config);
 
+            if (config.InitialDelayDuration> 0)
+            {
+                System.Threading.Thread.Sleep(1000 * config.InitialDelayDuration);
+            }
+
             if (string.IsNullOrWhiteSpace(config.Url))
             {
                 Log.Logger.Error("You must specify a url for the Repository Analytics API");
