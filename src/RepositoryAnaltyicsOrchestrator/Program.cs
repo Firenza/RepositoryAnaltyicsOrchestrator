@@ -3,6 +3,8 @@ using RestSharp;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace RepositoryAnaltyicsOrchestrator
@@ -11,11 +13,25 @@ namespace RepositoryAnaltyicsOrchestrator
     {
         public static async Task Main(string[] args)
         {
+            var logFileName = "RepositoryAnaltyicsOrchestrator.txt";
+
+            string logFilePath = null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                logFilePath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\RepositoryAnaltyics\{logFileName}";
+            }
+            else
+            {
+                logFilePath = $"/var/logs/repository_analtyics/{logFileName}";
+            }
+        
             Log.Logger = new LoggerConfiguration()
              .MinimumLevel.Debug()
              .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
              .Enrich.FromLogContext()
              .WriteTo.Console()
+             .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day)
              .CreateLogger();
 
             var configuration = new ConfigurationBuilder()
@@ -23,6 +39,8 @@ namespace RepositoryAnaltyicsOrchestrator
               .AddCommandLine(args)
               .AddEnvironmentVariables()
               .Build();
+
+            Log.Logger.Information($"Writing log files to {Path.GetDirectoryName(logFilePath)}");
 
             // Print out all config data
             foreach (var child in configuration.GetChildren())
