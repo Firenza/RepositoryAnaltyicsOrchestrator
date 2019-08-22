@@ -35,7 +35,7 @@ namespace RepositoryAnaltyicsOrchestrator
 
             Log.Logger.Information("Config is {@Config}", config);
 
-            if (config.InitialDelayDuration> 0)
+            if (config.InitialDelayDuration > 0)
             {
                 System.Threading.Thread.Sleep(1000 * config.InitialDelayDuration);
             }
@@ -61,7 +61,7 @@ namespace RepositoryAnaltyicsOrchestrator
             var runningInContainer = inDockerEnvVar == null || inDockerEnvVar == "true";
 
             var repositoryAnalyticsOrchestrator = new RepositoryAnalysisOrchestrator(Log.Logger, new RestClient(), runningInContainer);
-            await repositoryAnalyticsOrchestrator.OrchestrateAsync(config.Url, config.User, config.Organization, config.AsOf, config.BatchSize, config.RefreshAll, config.Concurrency);
+            await repositoryAnalyticsOrchestrator.OrchestrateAsync(config);
 
             return;
         }

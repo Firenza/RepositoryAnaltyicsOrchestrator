@@ -23,7 +23,7 @@ namespace RepositoryAnaltyicsOrchestrator
             this.runningInContainer = runningInContainer;
         }
 
-        public async Task OrchestrateAsync(string repositoryAnalyticsApiUrl, string userName, string organizationName, DateTime? asOf, int? sourceReadBatchSize, bool refreshAllInformation, int? maxConcurrentRequests)
+        public async Task OrchestrateAsync(RunTimeConfiguration config)
         {
             bool moreRepostoriesToRead = false;
             var sourceRepositoriesRead = 0;
@@ -35,49 +35,26 @@ namespace RepositoryAnaltyicsOrchestrator
                 var userOrOranizationNameQueryStringKey = string.Empty;
                 var userOrOganziationNameQueryStringValue = string.Empty;
 
-                if (!string.IsNullOrWhiteSpace(userName))
+                if (!string.IsNullOrWhiteSpace(config.User))
                 {
                     userOrOranizationNameQueryStringKey = "user";
-                    userOrOganziationNameQueryStringValue = userName;
+                    userOrOganziationNameQueryStringValue = config.User;
                 }
                 else
                 {
                     userOrOranizationNameQueryStringKey = "organization";
-                    userOrOganziationNameQueryStringValue = organizationName;
+                    userOrOganziationNameQueryStringValue = config.Organization;
                 }
 
-                int batchSize;
-
-                if (sourceReadBatchSize.HasValue)
-                {
-                    batchSize = sourceReadBatchSize.Value;
-                }
-                else
-                {
-                    batchSize = 50;
-                }
-
-                int maxConcurrenyLevel;
-
-                if (maxConcurrentRequests.HasValue)
-                {
-                    maxConcurrenyLevel = maxConcurrentRequests.Value;
-                }
-                else
-                {
-                    maxConcurrenyLevel = 1;
-                }
-
-                restClient.BaseUrl = new Uri(repositoryAnalyticsApiUrl);
+                restClient.BaseUrl = new Uri(config.Url);
 
                 string endCursor = null;
-
 
                 var stopWatch = Stopwatch.StartNew();
 
                 do
                 {
-                    logger.Information($"Reading next batch of {batchSize} repositories for login {userName ?? organizationName}");
+                    logger.Information($"Reading next batch of {config.BatchSize} repositories for login {config.User ?? config.Organization}");
 
                     CursorPagedResults<RepositorySummary> results = null;
 
@@ -85,7 +62,7 @@ namespace RepositoryAnaltyicsOrchestrator
                     {
                         var request = new RestRequest("/api/repositorysource/repositories");
                         request.AddQueryParameter("owner", userOrOganziationNameQueryStringValue);
-                        request.AddQueryParameter("take", batchSize.ToString());
+                        request.AddQueryParameter("take", config.BatchSize.ToString());
                         request.AddQueryParameter("endCursor", endCursor);
 
                         var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySummary>>(request);
@@ -101,7 +78,7 @@ namespace RepositoryAnaltyicsOrchestrator
                     {
                         var request = new RestRequest("/api/repositorysource/repositories");
                         request.AddQueryParameter("owner", userOrOganziationNameQueryStringValue);
-                        request.AddQueryParameter("take", batchSize.ToString());
+                        request.AddQueryParameter("take", config.BatchSize.ToString());
 
                         var response = await restClient.ExecuteTaskAsync<CursorPagedResults<RepositorySummary>>(request);
 
@@ -120,7 +97,7 @@ namespace RepositoryAnaltyicsOrchestrator
 
                     var repositoryAnalysisTasks = new List<Task>();
 
-                    using (var semaphore = new SemaphoreSlim(maxConcurrenyLevel))
+                    using (var semaphore = new SemaphoreSlim(config.Concurrency))
                     {
                         foreach (var result in results.Results)
                         {
@@ -133,7 +110,7 @@ namespace RepositoryAnaltyicsOrchestrator
                         await Task.WhenAll(repositoryAnalysisTasks);
                     }
 
-                    logger.Information($"Finished analyizing batch of {batchSize} repositories.  {sourceRepositoriesAnalyzed} respositories analyzed thus far");
+                    logger.Information($"Finished analyizing batch of {config.BatchSize} repositories.  {sourceRepositoriesAnalyzed} respositories analyzed thus far");
 
                 } while (moreRepostoriesToRead);
 
@@ -171,9 +148,9 @@ namespace RepositoryAnaltyicsOrchestrator
             {
                 try
                 {
-                    if (asOf.HasValue)
+                    if (config.AsOf.HasValue)
                     {
-                        logger.Information($"Starting analysis of {repositorySummary.Url} as of {asOf.Value.ToString("F")}");
+                        logger.Information($"Starting analysis of {repositorySummary.Url} as of {config.AsOf.Value.ToString("F")}");
                     }
                     else
                     {
@@ -182,10 +159,10 @@ namespace RepositoryAnaltyicsOrchestrator
 
                     var repositoryAnalysis = new RepositoryAnalysis
                     {
-                        ForceCompleteRefresh = refreshAllInformation,
+                        ForceCompleteRefresh = config.RefreshAll,
                         RepositoryLastUpdatedOn = repositorySummary.UpdatedAt,
                         RepositoryId = repositorySummary.Url,
-                        AsOf = asOf
+                        AsOf = config.AsOf
                     };
 
                     var request = new RestRequest("/api/repositoryanalysis/", Method.POST);
@@ -195,7 +172,7 @@ namespace RepositoryAnaltyicsOrchestrator
                     {
                         // If no requests have been completed then set the timeout to be higher as if an organization
                         // is being targeted then the reading of all the team information can take a few minutes.
-                        request.Timeout = 240000; // 4 Minutes
+                        request.Timeout = config.FirstApiCallTimeout;
                     }
 
                     var response = await restClient.ExecuteTaskAsync(request);
