@@ -259,5 +259,5 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-/RepositoryAnaltyicsOrchestrator/Properties/launchSettings.json
 /src/RepositoryAnaltyicsOrchestrator/Properties/launchSettings.json
+/src/RepositoryAnaltyicsOrchestrator/RepositoryAnaltyicsOrchestrator.args.json
