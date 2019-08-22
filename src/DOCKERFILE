@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:2.1-stretch AS build
+WORKDIR /src
+COPY ["RepositoryAnaltyicsOrchestrator/RepositoryAnaltyicsOrchestrator.csproj",  "RepositoryAnaltyicsOrchestrator/"]
+RUN dotnet restore "RepositoryAnaltyicsOrchestrator/RepositoryAnaltyicsOrchestrator.csproj"
+COPY . .
+WORKDIR "/src/RepositoryAnaltyicsOrchestrator"
+RUN dotnet build "RepositoryAnaltyicsOrchestrator.csproj" -c Release -o /app
+
+FROM build AS publish
+RUN dotnet publish "RepositoryAnaltyicsOrchestrator.csproj" -c Release -o /app
+
+
+FROM mcr.microsoft.com/dotnet/core/runtime:2.1 AS final
+WORKDIR /app
+COPY --from=publish /app .
+ENTRYPOINT ["dotnet", "RepositoryAnaltyicsOrchestrator.dll"]

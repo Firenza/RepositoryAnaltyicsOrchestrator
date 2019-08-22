@@ -1,7 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoryAnaltyicsOrchestrator", "RepositoryAnaltyicsOrchestrator\RepositoryAnaltyicsOrchestrator.csproj", "{B2EC01B1-312E-4155-B342-0D2DA9125FFC}"
 EndProject
@@ -10,6 +9,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{73D0E0E9-482
 		..\.gitattributes = ..\.gitattributes
 		..\.gitignore = ..\.gitignore
 		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docker", "Docker", "{C08C08FF-8FD1-4CE1-8732-3C002E163704}"
+	ProjectSection(SolutionItems) = preProject
+		BuildTagAndPushImage.bat = BuildTagAndPushImage.bat
+		DOCKERFILE = DOCKERFILE
 	EndProjectSection
 EndProject
 Global
